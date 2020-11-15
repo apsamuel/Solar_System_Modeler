@@ -1,13 +1,12 @@
+from __future__ import annotations  
 import os, sys
 sys.path.extend([os.path.join('.', 'lib')])
 
-
-#import orbital
 import bpy 
+import bpy_types
 import math
-
-
-
+# test adding the Planet class back for proper typing
+# from planet import Planet
 
 HELPERS = [
     'frame',
@@ -26,7 +25,7 @@ def frames():
     """Returns number of frames in blender scene"""
     return bpy.context.scene.frame_end
 
-def normalized_frame(mini= 0.0, maxi = math.pi*2):
+def normalized_frame(mini: float = 0.0, maxi: float = math.pi*2) -> float:
     """
     mini: float (Min. value for normalize frame)
     maxi: float (Max. value for normalize frame)
@@ -43,7 +42,7 @@ def normalized_frame(mini= 0.0, maxi = math.pi*2):
     )
 
 # helper methods for calculating positions, angles, and other things between objects in a blender scene
-def get_angle_a(a,b,c):
+def get_angle_a(a: float,b: float,c: float) -> float:
     """
     a: length of side a
     b: length of side b
@@ -59,7 +58,7 @@ def get_angle_a(a,b,c):
             )
         )
 
-def get_angle_b(a,b,c):
+def get_angle_b(a: float,b: float,c: float) -> float:
     """
     a: length of side a
     b: length of side b
@@ -75,7 +74,7 @@ def get_angle_b(a,b,c):
             )
         )
 
-def get_angle_c(a,b,c):
+def get_angle_c(a: float,b: float,c: float) -> float:
     """
     a: length of side a
     b: length of side b
@@ -96,7 +95,7 @@ def deselect_all_objects():
     """deselects all objects in active blender scene"""
     bpy.ops.object.select_all(action='DESELECT')
 
-def select_object(name):
+def select_object(name: str) -> bpy_types.Object:
     """
     name: str (blender object name)
     Selects and Returns requested object if exists
@@ -107,7 +106,7 @@ def select_object(name):
     obj.select_set(True)
     return obj
 
-def scene_props(sys_u ='METRIC', len_u ='KILOMETERS', mass_u ='KILOGRAMS', seperate_u= True, scale_u = 100000.00, grid_scale = 100000.00, f_len = 50.0, c_start = 100.00, c_end = 100000.00):
+def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KILOGRAMS', seperate_u: bool = True, scale_u: float = 100000.00, grid_scale: float = 100000.00, f_len: float = 50.0, c_start: float = 100.00, c_end: float = 100000.00):
     """
     sys_u: str (the system unit setting default: 'METRIC')
     len_u: str (the length unit setting default: 'KILOMETERS')
@@ -150,7 +149,7 @@ def scene_props(sys_u ='METRIC', len_u ='KILOMETERS', mass_u ='KILOGRAMS', seper
                         space.clip_start = c_start 
                         space.clip_end = c_end 
 
-def refresh_panels(space_type = "PROPERTIES", region_type ="WINDOW"):
+def refresh_panels(space_type: str = "PROPERTIES", region_type: str = "WINDOW"):
     """
     space_type: str (type of space to redraw)
     region_type: str (type of region to redraw)
@@ -163,23 +162,23 @@ def refresh_panels(space_type = "PROPERTIES", region_type ="WINDOW"):
                     if region.type == region_type:
                         region.tag_redraw
 
-def insert_custom_attributes(name, planet):
+def insert_custom_attributes(name: str, planet):
     """
     name: str (name of blender object to attach attributes to, note: works for MESH and EMPTY objects currently)
     planet: Planet (pass in the Planet object)
     adds custom attributes from python planet object object to corresponding blender object (parent Empty by default)
     """
     obj = select_object(name)
-    print(f"working with: {obj.name}")
     for i in planet.keys: 
         if obj.type == 'MESH':
+            print(f"INFO: adding attribute {i} with value {planet.__getattribute__(i)} to {obj.name}")
             obj.data[i] = planet.__getattribute__(i)
         else:
             obj[i] = planet.__getattribute__(i) 
 
     refresh_panels()
 
-def add_orbital_drivers(name, planet):
+def add_orbital_drivers(name: str, planet) -> bpy_types.Object:
     """
     name: str (name of blender object to attach orbital drivers to, note: this should be a planets parent object and correspond to the python object, by default attached to an EMPTY)
     planet: Planet (pass in the Planet object)
@@ -189,46 +188,40 @@ def add_orbital_drivers(name, planet):
     xdriver = planetPrimitive.driver_add("location", 0).driver
     ydriver = planetPrimitive.driver_add("location", 1).driver
     zdriver = planetPrimitive.driver_add("rotation_euler", 2).driver 
-    # x motion driver vars
+    # NOTE: x motion driver vars
     semi_major_axis = xdriver.variables.new()
     semi_major_axis.name = "semi_major_axis"
     semi_major_axis.targets[0].id = planetPrimitive
     semi_major_axis.targets[0].data_path = '["semimajorAxis"]'
-    # y motion driver vars
+    # NOTE: y motion driver vars
     semi_minor_axis = ydriver.variables.new()
     semi_minor_axis.name = "semi_minor_axis"
     semi_minor_axis.targets[0].id = planetPrimitive 
     semi_minor_axis.targets[0].data_path = '["semiminorAxis"]'
-    # z motion driver vars
+    # NOTE: z motion driver vars
     sideral_rot = zdriver.variables.new()
     sideral_rot.name = "sideral_rot"
     sideral_rot.targets[0].id = planetPrimitive
     sideral_rot.targets[0].data_path = '["sideralRotation"]'
-    # (x,y,z) motion driver expressions
-    #xdriver.expression = f"(semi_major_axis*(cos(frame/80)))+0"
-    #ydriver.expression = f"(semi_minor_axis*(sin(frame/80)))+0"
-    # use normalized frame function defaulted to a range of 0-2(pi)
+    # NOTE: (x,y,z) motion driver expressions
     xdriver.expression = f"(semi_major_axis*(cos(normalized_frame())))+0"
     ydriver.expression = f"(semi_minor_axis*(sin(normalized_frame())))+0"    
     zdriver.expression = f"(360/sideral_rot)*frame"
     return planetPrimitive
 
 
-def primitive_natural_satellites_add(planet, sub_divisions = 100):
+def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
     """
     planet: Planet (pass in Planet object)
-    sub_divisions: float ()
+    sub_divisions: int (the number of divisions to cut plane into)
     adds known natural satellites, an orbital path for each, and adds follow path constraint to satellite object, each object is parented to it's owning planets empty
     NOTE: The follow path constraint is used for orbital motion 
     TODO:  z-euler rotation driver for axial rotation
     """
     moons = planet.moonData  
     for moon in moons:
-        print(f"original: {moon.englishName} semiminor: {moon.semiminorAxis} semimajor: {moon.semimajorAxis} equaRadius: {moon.equaRadius}")
-        moon.scale_moon()
-        print(f"scaled: {moon.englishName} semiminor: {moon.semiminorAxis} semimajor: {moon.semimajorAxis} equaRadius: {moon.equaRadius}")
-        print(f"x equation: {moon.semimajorAxis}*(cos(u)*cos(v))")
-        print(f"y equation: {moon.semiminorAxis}*(cos(u)*sin(v))")
+        moon.scale_moon(debug=True)
+        #construct moons orbital path around its planet, plot elipse, dissolve faces leaving outer connected vertices, convert to path.
         bpy.ops.mesh.primitive_xyz_function_surface(x_eq=f"{moon.semimajorAxis}*(cos(u)*cos(v))", y_eq=f"{moon.semiminorAxis}*(cos(u)*sin(v))", z_eq="0", wrap_u=False, range_v_max=12.5664, close_v=False)
         moonOrbitalPath = bpy.context.active_object
         moonOrbitalPath.name = f"Orbital_Path_{moon.englishName}"
@@ -290,18 +283,23 @@ def primitive_natural_satellites_add(planet, sub_divisions = 100):
         bpy.data.shape_keys[key_name].key_blocks["Basis"].name = f"plane_{moon.englishName}"
         bpy.data.shape_keys[key_name].key_blocks["Key 1"].name = f"planet_{moon.englishName}"
         bpy.data.shape_keys[key_name].key_blocks[f"planet_{moon.englishName}"].value = 1.00
-        moonObject.parent = bpy.data.objects[f"empty_{planet.englishName}"]
+        # use an empty for the moon, to be consistent with the planets 
+        bpy.ops.object.empty_add(type='PLAIN_AXES', radius=diameter/2, location=(0, 0, 0))
+        empty = bpy.context.active_object
+        empty.name = f"empty_{moon.englishName}"
+        #uncomment to revert: moonObject.parent = bpy.data.objects[f"empty_{planet.englishName}"]
+        moonObject.parent = empty 
+        empty.parent = bpy.data.objects[f"empty_{planet.englishName}"]
+        # end of addition
         bpy.ops.object.constraint_add(type='FOLLOW_PATH')
-        moonObject.constraints["Follow Path"].target = bpy.data.objects[f"Orbital_Path_{moon.englishName}"]
-        moonObject.constraints["Follow Path"].use_curve_follow = True 
-        moonObject.constraints["Follow Path"].forward_axis = 'FORWARD_Y'
-        moonObject.constraints["Follow Path"].influence = 0.215
+        empty.constraints["Follow Path"].target = bpy.data.objects[f"Orbital_Path_{moon.englishName}"]
+        empty.constraints["Follow Path"].use_curve_follow = True 
+        empty.constraints["Follow Path"].forward_axis = 'FORWARD_Y'
+        empty.constraints["Follow Path"].influence = 0.075
         bpy.data.curves[f"Orbital_Path_{moon.englishName}"].path_duration = frames()
-       # moonOrbitalPath.motion_path.frame_start = 1
-       # moonOrbitalPath.motion_path.frame_end = frames()
-        #select_object(f"Key_{moon.englishName}")
-        override={'constraint':moonObject.constraints["Follow Path"]}
+        override={'constraint':empty.constraints["Follow Path"]}
         bpy.ops.constraint.followpath_path_animate(override,constraint="Follow Path", owner='OBJECT')
+        insert_custom_attributes(f"empty_{moon.englishName}", moon)
 
 
 

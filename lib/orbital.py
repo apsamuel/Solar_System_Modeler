@@ -5,6 +5,7 @@ from blender import frame, frames, normalized_frame
 
 
 
+
 def derive_semiminor_axis(planet):
   """Inputs: Planet; Outputs: semi-minor axis"""
   semiMajorAxis = planet.semimajorAxis 

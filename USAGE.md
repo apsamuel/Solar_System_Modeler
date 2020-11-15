@@ -20,12 +20,32 @@ import importlib # use importlib to easily reload changes
 import dev #setup internal functions
 
 # instantiate some planets
+venus = Planet('venus', debug=True)
+venus.scale_planet(debug=True)
+mercury = Planet('mercury',debug=True)
+mercury.scale_planet(debug=True)
+earth = Planet('earth',debug=True)
+earth.scale_planet(debug=True)
+mars = Planet('mars',debug=True)
+mars.scale_planet(debug=True)
+jupiter = Planet('jupiter',debug=True)
+jupiter.scale_planet(debug=True)
+saturn = Planet('saturn',debug=True)
+saturn.scale_planet(debug=True)
+uranus = Planet('uranus',debug=True)
+uranus.scale_planet(debug=True)
+neptune = Planet('neptune',debug=True)
+neptune.scale_planet(debug=True)
+
+# instantiate planets but don't scale
 venus = Planet('venus')
-venus.scale_planet()
 mercury = Planet('mercury')
-mercury.scale_planet()
 earth = Planet('earth')
-earth.scale_planet()
+mars = Planet('mars')
+jupiter = Planet('jupiter')
+saturn = Planet('saturn')
+uranus = Planet('uranus')
+neptune = Planet('neptune')
 
 # configure scene properties (IMPORTANT)
 blender.scene_props()
@@ -49,6 +69,7 @@ mars = Planet('mars')
 mars.scale_planet()
 blender.primitive_planet_add(mars)
 blender.add_orbital_drivers('empty_Mars',mars)
+blender.primitive_natural_satellites_add(mars)
 ```
 
 ## reload libs
