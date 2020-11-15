@@ -221,10 +221,13 @@ def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
     moons = planet.moonData  
     for moon in moons:
         moon.scale_moon(debug=True)
-        #construct moons orbital path around its planet, plot elipse, dissolve faces leaving outer connected vertices, convert to path.
+        # NOTE: construct moons orbital path around its planet, plot elipse, dissolve faces leaving outer connected vertices, convert to path.
+        print(f"INFO: configuring orbital path for {moon.englishName} with semimajorAxis ({moon.semimajorAxis}) and semiminorAxis ({moon.semiminorAxis})")
         bpy.ops.mesh.primitive_xyz_function_surface(x_eq=f"{moon.semimajorAxis}*(cos(u)*cos(v))", y_eq=f"{moon.semiminorAxis}*(cos(u)*sin(v))", z_eq="0", wrap_u=False, range_v_max=12.5664, close_v=False)
         moonOrbitalPath = bpy.context.active_object
         moonOrbitalPath.name = f"Orbital_Path_{moon.englishName}"
+        # NOTE: try setting the origin for objects...
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         diameter = moon.equaRadius*2
         bpy.ops.object.editmode_toggle()
         bpy.ops.mesh.dissolve_limited()
@@ -236,6 +239,8 @@ def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
         bpy.ops.mesh.primitive_plane_add(size=diameter, enter_editmode=False, location=(0, 0, 0))
         moonObject = bpy.context.active_object 
         moonObject.name = f"moon_{planet.englishName}_{moon.englishName}"
+        # NOTE: try setting the origin for objects...
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         rot_global_radians = float(format(math.radians(90), '.4f'))
         bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
             orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
@@ -286,6 +291,8 @@ def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
         # use an empty for the moon, to be consistent with the planets 
         bpy.ops.object.empty_add(type='PLAIN_AXES', radius=diameter/2, location=(0, 0, 0))
         empty = bpy.context.active_object
+        # NOTE: try setting the origin for objects...
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         empty.name = f"empty_{moon.englishName}"
         #uncomment to revert: moonObject.parent = bpy.data.objects[f"empty_{planet.englishName}"]
         moonObject.parent = empty 
@@ -317,6 +324,8 @@ def primitive_planet_add(planet, sub_divisions=100):
     rot_global_radians = float(format(math.radians(90), '.4f'))
     bpy.ops.mesh.primitive_plane_add(size=diameter, enter_editmode=False, location=(0, 0, 0))
     plane = bpy.context.active_object
+    # NOTE: try setting the origin for objects...
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
     plane.name = obj_name
     plane.data.name = f"mesh_{obj_name}"
     bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
@@ -386,6 +395,8 @@ def primitive_planet_add(planet, sub_divisions=100):
 
     bpy.ops.object.empty_add(type='PLAIN_AXES', radius=diameter/2, location=(0, 0, 0))
     empty = bpy.context.active_object
+    # NOTE: try setting the origin for objects...
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
     empty.name = f"empty_{obj_name}"
     plane.parent = empty
     insert_custom_attributes(f"empty_{obj_name}", planet)

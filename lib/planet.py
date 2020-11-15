@@ -17,7 +17,7 @@ class Planet:
         _planet = data.get_planet_data(name)
         # NOTE: keys from the dictionary object are added as class attributes to self
         for k in _planet.keys():
-            print(f"INFO: add key ({k}) with value ({_planet[k]}) to {_planet['englishName']}") if debug else None
+            print(f"INFO: adding attribute ({k}) with value ({_planet[k]}) to {_planet['englishName']}") if debug else None
             setattr(self, k,  _planet[k])
         self.semiminorAxis = round(derive_semiminor_axis(self))
         # NOTE: hack to avoid IDE errors, key is dynamically set from returned `planet` JSON object
@@ -34,7 +34,11 @@ class Planet:
                 if moon == None:
                     continue
                 print(f"INFO: adding moon {moon['rel']}") if debug else None
-                self.moonData.append(Moon(moon['rel']))
+                moonobj = Moon(moon['rel'], debug=True)
+                if not hasattr(moonobj, 'id') or not hasattr(moonobj, 'semimajorAxis') or not hasattr(moonobj, 'semiminorAxis'):
+                    print(f"INFO: the moon with relational URL {moon['rel']} has critical or required values missing, it will be skipped in plotting")
+                    continue
+                self.moonData.append(moonobj)
         # NOTE: store scale values
         self.scaleMassExp = 0.0 
         self.scaleSizeExp = 0.0 
@@ -96,7 +100,9 @@ class Planet:
         debug (bool): enables debug messages
         Returns Planet (scaled size, mass and distance values)
         """
-        print(f"INFO: unscaled values meanRadius ({self.meanRadius}) equaRadius ({self.equaRadius}) semimajorAxis ({self.semimajorAxis}) semiminorAxis ({self.semiminorAxis}) volExponent ({self.volExponent}) volValueRawKG ({self.volValue*(10**self.volExponent)}) massExponent ({self.massExponent}) massRawKG ({self.massValue*(10**self.massExponent)})") if debug else None
+        self.meanRadius = self.meanRadius
+        self.equaRadius = self.equaRadius
+        print(f"INFO: unscaled values meanRadius ({self.meanRadius}) equaRadius ({self.equaRadius}) semimajorAxis ({self.semimajorAxis}) semiminorAxis ({self.semiminorAxis})  volExponent ({self.volExponent}) volValueRawKG ({self.volValue*(10**self.volExponent)}) massExponent ({self.massExponent}) massRawKG ({self.massValue*(10**self.massExponent)})") if debug else None
         self.scaleDistExp = scale_dist 
         self.scaleMassExp = scale_mass 
         self.scaleSizeExp = scale_size
@@ -112,3 +118,13 @@ class Planet:
         print(f"INFO: scaled values meanRadius ({self.meanRadius}) equaRadius ({self.equaRadius}) semimajorAxis ({self.semimajorAxis}) semiminorAxis ({self.semiminorAxis}) volExponent ({self.volExponent}) volValueRawKG ({self.volValue*(10**self.volExponent)}) massExponent ({self.massExponent}) massRawKG ({self.massValue*(10**self.massExponent)})") if debug else None
         return self
 
+    def calculate_scale_exponents(self, digits=5):
+        distanceDigitCount = len(str(int(self.semimajorAxis)))
+        sizeDigitCount = len(str(int(self.equaRadius)))
+        massDigitCount = len(str(int( f"{int(self.massValue*(10**self.massExponent)):d}" )))
+        print(f"semimajor digits: {distanceDigitCount} sizeDigitCount: {sizeDigitCount} mass")
+        return dict({
+            "dist_scale_exp": float(distanceDigitCount - digits),
+            "size_scale_exp": float(sizeDigitCount - digits),
+            "mass_scale_exp": float(massDigitCount - digits)
+        })
