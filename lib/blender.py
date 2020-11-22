@@ -1,5 +1,5 @@
 from __future__ import annotations  
-import os, sys
+import os, sys, ctypes
 sys.path.extend([os.path.join('.', 'lib')])
 
 import bpy 
@@ -25,10 +25,11 @@ def frames():
     """Returns number of frames in blender scene"""
     return bpy.context.scene.frame_end
 
-def normalized_frame(mini: float = 0.0, maxi: float = math.pi*2) -> float:
+def normalized_frame(mini: float = 0.0, maxi: float = math.pi*2, multiplier=1.0) -> float:
     """
     mini: float (Min. value for normalize frame)
     maxi: float (Max. value for normalize frame)
+    multiplier: float (normalized_frame*multiplier)
     Returns normalized value for current frame between `mini` and `maxi` values
     """
     mini = float(mini)
@@ -38,7 +39,7 @@ def normalized_frame(mini: float = 0.0, maxi: float = math.pi*2) -> float:
     # use standard normalization function with frame values
     print(f"({maxi} - {mini}) * ({frame} - {mini}) / (float(frames()) - 1.00) + {mini}")
     return float(
-        (maxi - mini) * (frame - mini) / (float(frames()) - float(1)) + mini
+        multiplier*((maxi - mini) * (frame - mini) / (float(frames()) - float(1)) + mini)
     )
 
 # helper methods for calculating positions, angles, and other things between objects in a blender scene
@@ -106,7 +107,7 @@ def select_object(name: str) -> bpy_types.Object:
     obj.select_set(True)
     return obj
 
-def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KILOGRAMS', seperate_u: bool = True, scale_u: float = 100000.00, grid_scale: float = 100000.00, f_len: float = 50.0, c_start: float = 100.00, c_end: float = 100000.00):
+def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KILOGRAMS', seperate_u: bool = True, scale_u: float = 10000.00, grid_scale: float = 10000.00, f_len: float = 50.0, c_start: float = 100.00, c_end: float = 1000000.00):
     """
     sys_u: str (the system unit setting default: 'METRIC')
     len_u: str (the length unit setting default: 'KILOMETERS')
@@ -162,7 +163,7 @@ def refresh_panels(space_type: str = "PROPERTIES", region_type: str = "WINDOW"):
                     if region.type == region_type:
                         region.tag_redraw
 
-def insert_custom_attributes(name: str, planet):
+def insert_custom_attributes(name: str, planet, debug=True):
     """
     name: str (name of blender object to attach attributes to, note: works for MESH and EMPTY objects currently)
     planet: Planet (pass in the Planet object)
@@ -170,21 +171,29 @@ def insert_custom_attributes(name: str, planet):
     """
     obj = select_object(name)
     for i in planet.keys: 
+        print(f"INFO: adding attribute {i} with value {planet.__getattribute__(i)} to {obj.name}") if debug else None
         if obj.type == 'MESH':
-            print(f"INFO: adding attribute {i} with value {planet.__getattribute__(i)} to {obj.name}")
-            obj.data[i] = planet.__getattribute__(i)
+            try:
+                obj.data[i] = planet.__getattribute__(i) 
+            except OverflowError:
+                print(f"ERROR: key -> {i} value {planet.__getattribute__(i)} is too large to convert to C int, setting to default {ctypes.c_uint(-1).value}")
+                obj[i] = ctypes.c_uint(-1).value #set to max c int
         else:
-            obj[i] = planet.__getattribute__(i) 
-
+            try:
+                obj[i] = planet.__getattribute__(i) 
+            except OverflowError:
+                print(f"ERROR: key -> {i} value {planet.__getattribute__(i)} is too large to convert to C int, setting to default {ctypes.c_uint(-1).value}")    
+                obj[i] = ctypes.c_uint(-1).value #set to max c int
     refresh_panels()
 
-def add_orbital_drivers(name: str, planet) -> bpy_types.Object:
+def add_orbital_drivers(planet) -> bpy_types.Object:
     """
     name: str (name of blender object to attach orbital drivers to, note: this should be a planets parent object and correspond to the python object, by default attached to an EMPTY)
     planet: Planet (pass in the Planet object)
     adds motion drivers (x tranlation, y tranlation, z rotation) to parent empty object for planet
     """
-    planetPrimitive = select_object(name)
+    #planet.englishName
+    planetPrimitive = bpy.data.objects[planet.englishName].parent
     xdriver = planetPrimitive.driver_add("location", 0).driver
     ydriver = planetPrimitive.driver_add("location", 1).driver
     zdriver = planetPrimitive.driver_add("rotation_euler", 2).driver 
@@ -193,11 +202,33 @@ def add_orbital_drivers(name: str, planet) -> bpy_types.Object:
     semi_major_axis.name = "semi_major_axis"
     semi_major_axis.targets[0].id = planetPrimitive
     semi_major_axis.targets[0].data_path = '["semimajorAxis"]'
+##
+    harmonic_frequncy = xdriver.variables.new()
+    harmonic_frequncy.name = "harmonic_frequency"
+    harmonic_frequncy.targets[0].id = planetPrimitive
+    harmonic_frequncy.targets[0].data_path = '["harmonicFrequency"]'
+
+    distance_in_au = xdriver.variables.new()
+    distance_in_au.name = "distance_in_au"
+    distance_in_au.targets[0].id = planetPrimitive
+    distance_in_au.targets[0].data_path = '["distanceFromSunInAU"]'
+##
     # NOTE: y motion driver vars
     semi_minor_axis = ydriver.variables.new()
     semi_minor_axis.name = "semi_minor_axis"
     semi_minor_axis.targets[0].id = planetPrimitive 
     semi_minor_axis.targets[0].data_path = '["semiminorAxis"]'
+##
+    harmonic_frequncy = ydriver.variables.new()
+    harmonic_frequncy.name = "harmonic_frequency"
+    harmonic_frequncy.targets[0].id = planetPrimitive
+    harmonic_frequncy.targets[0].data_path = '["harmonicFrequency"]'
+
+    distance_in_au = ydriver.variables.new()
+    distance_in_au.name = "distance_in_au"
+    distance_in_au.targets[0].id = planetPrimitive
+    distance_in_au.targets[0].data_path = '["distanceFromSunInAU"]'
+##
     # NOTE: z motion driver vars
     sideral_rot = zdriver.variables.new()
     sideral_rot.name = "sideral_rot"
@@ -210,19 +241,32 @@ def add_orbital_drivers(name: str, planet) -> bpy_types.Object:
     return planetPrimitive
 
 
-def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
+def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = True, debug: bool = False):
     """
     planet: Planet (pass in Planet object)
     sub_divisions: int (the number of divisions to cut plane into)
+    prettify: bool (use some fancy logix to try to keep the scene looking good)
+    debug: bool (output informational messages)
     adds known natural satellites, an orbital path for each, and adds follow path constraint to satellite object, each object is parented to it's owning planets empty
     NOTE: The follow path constraint is used for orbital motion 
-    TODO:  z-euler rotation driver for axial rotation
+    TODO:  z-euler rotation driver for axial rotation, add checks for moon limits here, but store all moons in planet object otherwise
     """
-    moons = planet.moonData  
+    moons = planet.moonData
+    planetEquaDiameter = planet.equaRadius*2 
+    planetMajorAxis = planet.semimajorAxis*2
+    planetName = planet.englishName
+    print(f"INFO: will process {len(planet.moonData)} moons for {planet.englishName}") if debug else None
     for moon in moons:
-        moon.scale_moon(debug=True)
+        print(f"INFO: processing {moon.englishName}") if debug else None
+        # NOTE: if the moons semimajorAxis*2 is less than the planets equaDiameter, the moon will be INSIDE the planet. solution Moon.semimajorAxis=(semimajorAxis*2)+planetEquaDiameter; Moon.semiminorAxis=(semiminorAxis*2)+planetEquaDiameter
+        if prettify:
+            moonMajorAxis = moon.semimajorAxis*2 
+            moonMinorAxis = moon.semiminorAxis*2 
+            if moonMajorAxis <= planetEquaDiameter or moonMinorAxis <= planetEquaDiameter:
+                moon.semiminorAxis = moon.semiminorAxis+(planetEquaDiameter/2)
+                moon.semimajorAxis = moon.semimajorAxis+(planetEquaDiameter/2) 
         # NOTE: construct moons orbital path around its planet, plot elipse, dissolve faces leaving outer connected vertices, convert to path.
-        print(f"INFO: configuring orbital path for {moon.englishName} with semimajorAxis ({moon.semimajorAxis}) and semiminorAxis ({moon.semiminorAxis})")
+        print(f"INFO: configuring the orbital path for {moon.englishName} around {planetName}  (planetEquaDiameter: {planetEquaDiameter}, planetMajorAxis: {planetMajorAxis}) with semimajorAxis ({moon.semimajorAxis}) and semiminorAxis ({moon.semiminorAxis})") if debug else None
         bpy.ops.mesh.primitive_xyz_function_surface(x_eq=f"{moon.semimajorAxis}*(cos(u)*cos(v))", y_eq=f"{moon.semiminorAxis}*(cos(u)*sin(v))", z_eq="0", wrap_u=False, range_v_max=12.5664, close_v=False)
         moonOrbitalPath = bpy.context.active_object
         moonOrbitalPath.name = f"Orbital_Path_{moon.englishName}"
@@ -306,18 +350,18 @@ def primitive_natural_satellites_add(planet, sub_divisions: int = 100):
         bpy.data.curves[f"Orbital_Path_{moon.englishName}"].path_duration = frames()
         override={'constraint':empty.constraints["Follow Path"]}
         bpy.ops.constraint.followpath_path_animate(override,constraint="Follow Path", owner='OBJECT')
-        insert_custom_attributes(f"empty_{moon.englishName}", moon)
+        insert_custom_attributes(f"empty_{moon.englishName}", moon, debug=debug)
 
 
 
 # Planet 'Primitive'
-def primitive_planet_add(planet, sub_divisions=100):
+def plot_planet(planet, sub_divisions: int = 100, debug: bool = False):
     """
     planet: Planet (pass in Planet object)
-    sub_divisions: float (the number of subdivisions for plane primitive, more divisions for higher quality, but slower render)
+    sub_divisions: int (the number of subdivisions for plane primitive, more divisions for higher quality, but slower render)
     adds planet to scene at origin
-    NOTE: should call Planet.scale_planet() first 
-    TODO:  z-euler rotation driver for axial rotation
+    NOTE: you should call Planet.scale_planet() first 
+    TODO: axialTilt
     """
     diameter = planet.equaRadius*2
     obj_name = planet.englishName
@@ -399,5 +443,5 @@ def primitive_planet_add(planet, sub_divisions=100):
     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
     empty.name = f"empty_{obj_name}"
     plane.parent = empty
-    insert_custom_attributes(f"empty_{obj_name}", planet)
+    insert_custom_attributes(f"empty_{obj_name}", planet, debug=debug)
 
