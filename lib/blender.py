@@ -5,6 +5,7 @@ sys.path.extend([os.path.join('.', 'lib')])
 import bpy 
 import bpy_types
 import math
+import utilz
 # test adding the Planet class back for proper typing
 # from planet import Planet
 
@@ -177,13 +178,13 @@ def insert_custom_attributes(name: str, planet, debug=True):
                 obj.data[i] = planet.__getattribute__(i) 
             except OverflowError:
                 print(f"ERROR: key -> {i} value {planet.__getattribute__(i)} is too large to convert to C int, setting to default {ctypes.c_uint(-1).value}")
-                obj[i] = ctypes.c_uint(-1).value #set to max c int
+                obj[i] =  utilz.make_integer_safe( planet.__getattribute__(i) )#set to max c int
         else:
             try:
                 obj[i] = planet.__getattribute__(i) 
             except OverflowError:
                 print(f"ERROR: key -> {i} value {planet.__getattribute__(i)} is too large to convert to C int, setting to default {ctypes.c_uint(-1).value}")    
-                obj[i] = ctypes.c_uint(-1).value #set to max c int
+                obj[i] = utilz.make_integer_safe( planet.__getattribute__(i) ) #set to max c int
     refresh_panels()
 
 def add_orbital_drivers(planet) -> bpy_types.Object:
@@ -202,41 +203,35 @@ def add_orbital_drivers(planet) -> bpy_types.Object:
     semi_major_axis.name = "semi_major_axis"
     semi_major_axis.targets[0].id = planetPrimitive
     semi_major_axis.targets[0].data_path = '["semimajorAxis"]'
-##
     harmonic_frequncy = xdriver.variables.new()
     harmonic_frequncy.name = "harmonic_frequency"
     harmonic_frequncy.targets[0].id = planetPrimitive
     harmonic_frequncy.targets[0].data_path = '["harmonicFrequency"]'
-
     distance_in_au = xdriver.variables.new()
     distance_in_au.name = "distance_in_au"
     distance_in_au.targets[0].id = planetPrimitive
     distance_in_au.targets[0].data_path = '["distanceFromSunInAU"]'
-##
     # NOTE: y motion driver vars
     semi_minor_axis = ydriver.variables.new()
     semi_minor_axis.name = "semi_minor_axis"
     semi_minor_axis.targets[0].id = planetPrimitive 
     semi_minor_axis.targets[0].data_path = '["semiminorAxis"]'
-##
     harmonic_frequncy = ydriver.variables.new()
     harmonic_frequncy.name = "harmonic_frequency"
     harmonic_frequncy.targets[0].id = planetPrimitive
     harmonic_frequncy.targets[0].data_path = '["harmonicFrequency"]'
-
     distance_in_au = ydriver.variables.new()
     distance_in_au.name = "distance_in_au"
     distance_in_au.targets[0].id = planetPrimitive
     distance_in_au.targets[0].data_path = '["distanceFromSunInAU"]'
-##
     # NOTE: z motion driver vars
     sideral_rot = zdriver.variables.new()
     sideral_rot.name = "sideral_rot"
     sideral_rot.targets[0].id = planetPrimitive
     sideral_rot.targets[0].data_path = '["sideralRotation"]'
     # NOTE: (x,y,z) motion driver expressions
-    xdriver.expression = f"(semi_major_axis*(cos(normalized_frame())))+0"
-    ydriver.expression = f"(semi_minor_axis*(sin(normalized_frame())))+0"    
+    xdriver.expression = f"(semi_major_axis*(cos((normalized_frame() / distance_in_au))))+0"
+    ydriver.expression = f"(semi_minor_axis*(sin((normalized_frame() / distance_in_au))))+0"    
     zdriver.expression = f"(360/sideral_rot)*frame"
     return planetPrimitive
 
@@ -338,7 +333,6 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
         # NOTE: try setting the origin for objects...
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         empty.name = f"empty_{moon.englishName}"
-        #uncomment to revert: moonObject.parent = bpy.data.objects[f"empty_{planet.englishName}"]
         moonObject.parent = empty 
         empty.parent = bpy.data.objects[f"empty_{planet.englishName}"]
         # end of addition
