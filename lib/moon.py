@@ -42,8 +42,8 @@ class Moon:
         self.volExponent = self.vol['volExponent']
         self.massValue = self.mass['massValue']
         self.massExponent = self.mass['massExponent']
-        self.volumeRawKG = int( f"{int(self.volValue*(10**self.volExponent)):d}" )
-        self.massRawKG = int( f"{int(self.massValue*(10**self.massExponent)):d}" )
+        self.volumeRawKG = float( f"{float(self.volValue*(10**self.volExponent)):f}" )
+        self.massRawKG = float( f"{float(self.massValue*(10**self.massExponent)):f}" )
         self.keys = list(_moon.keys()) + list(('volValue', 'volExponent', 'massValue', 'massExponent', 'volumeRawKG', 'massRawKG', 'scaleMassExp','scaleSizeExp','scaleDistExp', 'scaleVolExp'))
         # NOTE: some moons may have no equaRadius data (see jupiter), in these cases fall back to setting radius by meanRadius value
         if self.equaRadius == 0:
@@ -107,8 +107,8 @@ class Moon:
         self.semiminorAxis = self.semiminorAxis/(10**scale_dist)
         self.volExponent = self.volExponent - (scale_vol)
         self.massExponent = self.massExponent - (scale_mass)
-        self.massRawKG = int( f"{int(self.massValue*(10**self.massExponent)):d}" )
-        self.volumeRawKG = int( f"{int(self.volValue*(10**self.volExponent)):d}" )
+        self.massRawKG = float( f"{int(self.massValue*(10**self.massExponent)):d}" )
+        self.volumeRawKG = float( f"{int(self.volValue*(10**self.volExponent)):d}" )
         # NOTE: to address `OverflowError: Python int too large to convert to C int`, values which tend towards max will have their overage +100 subtracted `ctypes.c_uint(-1).value` 
         if self.massRawKG >= ctypes.c_uint(-1).value:
             amountOver = self.massRawKG - ctypes.c_uint(-1).value

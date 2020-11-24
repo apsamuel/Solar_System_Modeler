@@ -94,8 +94,8 @@ class Planet:
         self.massValue = self.mass['massValue']
         self.massExponent = self.mass['massExponent']
         # NOTE: calculate raw KG values for convenience, use format string to prevent scientific notation, which doesnt work well as inputs in blender.
-        self.volumeRawKG = int( f"{int(self.volValue*(10**self.volExponent)):d}" )
-        self.massRawKG = int( f"{int(self.massValue*(10**self.massExponent)):d}" )
+        self.volumeRawKG = float( f"{float(self.volValue*(10**self.volExponent)):f}" )
+        self.massRawKG = float( f"{float(self.massValue*(10**self.massExponent)):f}" )
         ############################################################################################################
         # NOTE: calculate distance from sun in AU                                                                  #
         # NOTE: calculate harmonic frequency value                                                                 #
@@ -105,8 +105,8 @@ class Planet:
         # 1.496*(10**(8-scale_exp)) -> 1 au in km (scaled)                                                         #
         # 6.685*(10**-(9-scale_exp)) -> 1 km in au (scaled)                                                        #     
         ############################################################################################################
-        self.distanceFromSunInAU = float(f"{int(self.semimajorAxis*( 6.685 * (10**-float(9) ) )):d}")
-        self.harmonicFrequency = float(f"{int((self.distanceFromSunInAU**3)/(self.sideralOrbit**2)):d}")        
+        self.distanceFromSunInAU = float(f"{float(self.semimajorAxis*( 6.685 * (10**-float(9) ) )):f}")
+        self.harmonicFrequency = float(f"{float((self.distanceFromSunInAU**3)/(self.sideralOrbit**2)):f}")        
         self.keys = list(_planet.keys()) + list(('semiminorAxis', 'volValue', 'volExponent', 'massValue', 'massExponent', 'volumeRawKG', 'massRawKG', 'distanceFromSunInAU','harmonicFrequency', 'scaleMassExp','scaleSizeExp','scaleDistExp', 'scaleVolExp'))
         self.__class__._instances.append(self) 
 
@@ -185,7 +185,7 @@ class Planet:
             self.volRawKG = self.volRawKG - (amountOver + 100.00)
         self.meanRadius = self.meanRadius / (10**(scale_size)) 
         self.equaRadius = self.equaRadius / (10**(scale_size))
-        self.distanceFromSunInAU = self.distanceFromSunInAU / (10**(scale_dist))
+        #self.distanceFromSunInAU = self.distanceFromSunInAU / (10**(scale_dist))
         # NOTE: you should scale moons with the planet accordingly
         # scale_size: float = 0.5,scale_mass: float = 8.5, scale_vol: float = 8.5, scale_dist: float = 4.2, debug: bool = False
         if do_moons:
