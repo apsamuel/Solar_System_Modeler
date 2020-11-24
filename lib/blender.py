@@ -108,7 +108,7 @@ def select_object(name: str) -> bpy_types.Object:
     obj.select_set(True)
     return obj
 
-def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KILOGRAMS', seperate_u: bool = True, scale_u: float = 10000.00, grid_scale: float = 10000.00, f_len: float = 50.0, c_start: float = 100.00, c_end: float = 1000000.00):
+def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KILOGRAMS', seperate_u: bool = True, scale_u: float = 10000.00, grid_scale: float = 10000.00, f_len: float = 50.0, c_start: float = 100.00, c_end: float = 1000000.00, year_count: int = 20):
     """
     sys_u: str (the system unit setting default: 'METRIC')
     len_u: str (the length unit setting default: 'KILOMETERS')
@@ -129,6 +129,7 @@ def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KI
     bpy.data.scenes["Scene"].use_gravity = False 
     bpy.data.scenes["Scene"].use_nodes = True  
     bpy.data.scenes["Scene"].eevee.use_bloom = True 
+    bpy.data.scenes["Scene"].frame_end = 365*year_count
 
     for workspace in list(bpy.data.workspaces):
         print(f"workspace: {workspace.name}")
