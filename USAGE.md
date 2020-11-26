@@ -56,3 +56,26 @@ blender.plot_planet(Planet.byname('Jupiter'), debug=True)
 blender.add_orbital_drivers(Planet.byname('Jupiter'))
 blender.plot_natural_satellites(Planet.byname('Jupiter'))
 ```
+
+```python
+#XYZ function for sphere
+x= radius * ( sin(u)*sin(v) )  
+y = radius * (cos(u)*sin(v) )
+z = radius*(cos(v))
+
+
+
+
+#XYZ function for hemisphere (sits like a dome)
+## u = 0,2pi v = 0, radius
+x=sqrt(semimajorAxis**2 - v**2)*(cos(u))
+y=sqrt(semiminorAxis**2 - v**2)*(sin(u))
+z=v
+
+#XYZ function for hemisphere (flipped on z axis, like cup)
+x=sqrt(10**2 - v**2)*(cos(u))
+y=sqrt(10**2 - v**2)*(sin(u))
+z=-v
+
+
+```
