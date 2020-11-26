@@ -6,8 +6,9 @@ import bpy
 import bpy_types
 import math
 import utilz
-# test adding the Planet class back for proper typing
-# from planet import Planet
+# test adding the Planet and Moon class back for proper typing
+#from planet import Planet
+#from moon import Moon
 
 HELPERS = [
     'frame',
@@ -119,6 +120,7 @@ def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KI
     f_len: float (the focal length of the camera)
     c_start: float (the clipping minimum, used for viewing objects in blender)
     c_end: float (the clipping maximum, use for viewing objects in blender)
+    year_count: int (multiplier for earth year, 365 frames = 1 year)
     Configures properties and view panel settings with provided scales globally, preset for solar system scales
     """
     bpy.data.scenes["Scene"].unit_settings.system = sys_u
@@ -245,7 +247,7 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
     debug: bool (output informational messages)
     adds known natural satellites, an orbital path for each, and adds follow path constraint to satellite object, each object is parented to it's owning planets empty
     NOTE: The follow path constraint is used for orbital motion 
-    TODO:  z-euler rotation driver for axial rotation, add checks for moon limits here, but store all moons in planet object otherwise
+    TODO:  add z-euler rotation driver for axial rotation, add checks for moon limits here, add force fields, fix rotation speeds to be based on the sideralOrbit period for the moon
     """
     moons = planet.moonData
     planetEquaDiameter = planet.equaRadius*2 
@@ -341,7 +343,9 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
         empty.constraints["Follow Path"].target = bpy.data.objects[f"Orbital_Path_{moon.englishName}"]
         empty.constraints["Follow Path"].use_curve_follow = True 
         empty.constraints["Follow Path"].forward_axis = 'FORWARD_Y'
-        empty.constraints["Follow Path"].influence = 0.075
+        # TODO: better calculate the influence for constraint 
+        #empty.constraints["Follow Path"].influence = 0.075
+        empty.constraints["Follow Path"].influence = moon.__class__.normalize_attrib('semimajorAxis', moon.semimajorAxis, start=0.025, end=0.25, precision=5)
         bpy.data.curves[f"Orbital_Path_{moon.englishName}"].path_duration = frames()
         override={'constraint':empty.constraints["Follow Path"]}
         bpy.ops.constraint.followpath_path_animate(override,constraint="Follow Path", owner='OBJECT')
