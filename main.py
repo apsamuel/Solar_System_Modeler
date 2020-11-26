@@ -4,9 +4,10 @@ LIB_HOME='/Users/photon/DevOps/Projects/Solar_System_Model'
 os.chdir(LIB_HOME)
 sys.path.extend([os.path.join('.', 'lib')])
 import data as data
-import planet, moon
+import planet, moon, sun
 from planet import Planet
 from moon import Moon
+from sun import Sun
 from copy import copy
 import orbital as orbital
 import blender as blender 
