@@ -287,7 +287,8 @@ class Planet:
         """
         attrib: attribute on Planet class to output
         debug (bool): enables debug messages
-        Scales all defined planet objects by defined parameters (scaled size, mass and distance values)
+        Queries all defined Planet objects for `attrib` 
+        Returns: dict
         """
         try:
             return sorted({
@@ -296,6 +297,32 @@ class Planet:
         except AttributeError:
             print(f"WARNING: an attribute named `{attrib}` does not exist")
             return None
+
+    @classmethod 
+    def vals(cls, attrib: str) -> list: 
+        """
+        attrib: attribute on Planet class to output
+        debug (bool): enables debug messages
+        Get a sorted list of values for an attribute across all defined Planet objects
+        """
+        try:
+            return sorted([i[-1] for i in cls.query(attrib)])
+        except AttributeError:
+            print(f"WARNING: an attribute named `{attrib}` does not exist")
+            return None
+
+    @classmethod 
+    def normalize_attribs(cls, attrib: str, start = 1, end = 10, precision=5):
+        data = cls.vals(attrib)
+        return [ round(float( (end-start)*(i-min(data))/(max(data)-min(data))+start),precision)  for i in data]
+
+    @classmethod 
+    def normalize_attrib(cls, attrib: str, value, start = 1, end = 10, precision=5):
+        data = cls.vals(attrib)
+        return round(float( 
+            (end-start)*(value-min(data))/(max(data)-min(data))+start
+            ),precision) 
+
 
     @classmethod
     def minmax(cls, attrib: str) -> tuple:

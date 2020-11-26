@@ -192,6 +192,45 @@ class Moon:
             return None
 
     @classmethod 
+    def vals(cls, attrib: str) -> list: 
+        """
+        attrib: attribute on Moon class to output
+        debug (bool): enables debug messages
+        Get a sorted list of values for an attribute across all defined Moon objects
+        """
+        try:
+            return sorted([i[-1] for i in cls.query(attrib)])
+        except AttributeError:
+            print(f"WARNING: an attribute named `{attrib}` does not exist")
+            return None
+
+    @classmethod 
+    def normalize_attribs(cls, attrib: str, start = 1, end = 10, precision=5):
+        """
+        attrib: attribute on Moon class to output
+        start (int/float) :   scale range start
+        end (int/float)   :   scale range end
+        precision (int)   :   number of digits after the decimal point
+        Normalize the list of attribute values between provided range across all defined Moon objects
+        """
+        data = cls.vals(attrib)
+        return [ round(float( (end-start)*(i-min(data))/(max(data)-min(data))+start),precision)  for i in data]
+
+    @classmethod 
+    def normalize_attrib(cls, attrib: str, value, start = 1, end = 10, precision=5):
+        """
+        attrib: attribute on Moon class to output
+        start (int/float) :   scale range start
+        end (int/float)   :   scale range end
+        precision (int)   :   number of digits after the decimal point
+        Normalize a scalar attribute value between provided range. (range is calculated across all defined Moon objects)
+        """
+        data = cls.vals(attrib)
+        return round(float( 
+            (end-start)*(value-min(data))/(max(data)-min(data))+start
+            ),precision) 
+
+    @classmethod 
     def query(cls, attrib: str) -> dict:
         """
         attrib: attribute on Moon class to output
