@@ -344,8 +344,8 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
         empty.constraints["Follow Path"].use_curve_follow = True 
         empty.constraints["Follow Path"].forward_axis = 'FORWARD_Y'
         # TODO: better calculate the influence for constraint 
-        #empty.constraints["Follow Path"].influence = 0.075
-        empty.constraints["Follow Path"].influence = moon.__class__.normalize_attrib('semimajorAxis', moon.semimajorAxis, start=0.025, end=0.25, precision=5)
+        empty.constraints["Follow Path"].influence = 0.075
+        #empty.constraints["Follow Path"].influence = moon.__class__.normalize_attrib('semimajorAxis', moon.semimajorAxis, start=0.025, end=0.25, precision=5)
         bpy.data.curves[f"Orbital_Path_{moon.englishName}"].path_duration = frames()
         override={'constraint':empty.constraints["Follow Path"]}
         bpy.ops.constraint.followpath_path_animate(override,constraint="Follow Path", owner='OBJECT')
@@ -444,3 +444,88 @@ def plot_planet(planet, sub_divisions: int = 100, debug: bool = False):
     plane.parent = empty
     insert_custom_attributes(f"empty_{obj_name}", planet, debug=debug)
 
+# Planet 'Sun'
+def plot_sun(sun, sub_divisions: int = 100, debug: bool = False):
+    """
+    sun: Planet (pass in Sun object)
+    sub_divisions: int (the number of subdivisions for plane primitive, more divisions for higher quality, but slower render)
+    adds sun to scene at origin
+    NOTE: you should DEFINITELY call Sun.scale_sun() first 
+    TODO: axialTilt
+    """
+    diameter = sun.equaRadius*2
+    obj_name = sun.englishName
+    rot_global_radians = float(format(math.radians(90), '.4f'))
+    bpy.ops.mesh.primitive_plane_add(size=diameter, enter_editmode=False, location=(0, 0, 0))
+    plane = bpy.context.active_object
+    # NOTE: try setting the origin for objects...
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+    plane.name = obj_name
+    plane.data.name = f"mesh_{obj_name}"
+    bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
+        orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+        constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
+        proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False,
+        use_proportional_projected=False)
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.subdivide(number_cuts=sub_divisions, quadcorner='INNERVERT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0.001)
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.object.shape_key_add(from_mix=False)
+    bpy.ops.object.shape_key_add(from_mix=False)
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.transform.rotate(value=-rot_global_radians, orient_axis='X', orient_type='GLOBAL',
+        orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+        constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
+        proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False,
+        use_proportional_projected=False)
+    bpy.ops.transform.translate(value=(0, 0, diameter / 2), orient_type='GLOBAL',
+        orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+        constraint_axis=(False, False, True), mirror=True, use_proportional_edit=False,
+        proportional_edit_falloff='SMOOTH', proportional_size=1,
+        use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.vertex_warp(warp_angle=float(format(math.radians(180), '.4f')),  viewmat=(
+        (-2.22045e-16, 0, 1, 0), 
+        (1, -2.22045e-16, 0, 0), 
+        (0, 1, -2.22045e-16, 0), 
+        (-3.9767, -2.02075, -28.9444, 1)
+        ),
+        center=(0, 0, 0))
+    bpy.ops.transform.vertex_warp(warp_angle=float(format(math.radians(360), '.4f')), viewmat=(
+        (1, 0, -0, 0), (-0, -1.34359e-07, -1, 0), (0, 1, -1.34359e-07, 0), (-3.75436, -2.02075, 3.9767, 1)),
+                                  center=(0, 0, 0))
+    bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
+                             orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+                             constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
+                             proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False,
+                             use_proportional_projected=False)
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    key_name = f"Key_{obj_name}"
+    bpy.data.shape_keys['Key'].name = key_name
+    bpy.data.shape_keys[key_name].key_blocks["Basis"].name = f"plane_{obj_name}"
+    bpy.data.shape_keys[key_name].key_blocks["Key 1"].name = f"star_{obj_name}"
+    bpy.data.shape_keys[key_name].key_blocks[f"star_{obj_name}"].value = 1.00
+    #set rigid, add gravity like force-field
+    bpy.ops.rigidbody.objects_add()
+    plane.rigid_body.enabled = True
+    plane.rigid_body.type = 'ACTIVE'
+    plane.rigid_body.mass = sun.massRawKG
+    plane.rigid_body.kinematic = True
+    plane.rigid_body.friction = 0
+    plane.rigid_body.restitution = 0.5 
+    plane.rigid_body.collision_shape = 'SPHERE'
+    plane.rigid_body.linear_damping = 0  
+    plane.rigid_body.angular_damping = 0
+    bpy.ops.object.forcefield_toggle()
+    plane.field.shape = 'POINT'
+    plane.field.type = 'FORCE'
+    plane.field.strength = 100.00 
+    plane.field.use_gravity_falloff = True 
+    bpy.ops.object.empty_add(type='PLAIN_AXES', radius=diameter/2, location=(0, 0, 0))
+    empty = bpy.context.active_object
+    # NOTE: try setting the origin for objects...
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+    empty.name = f"empty_{obj_name}"
+    plane.parent = empty
+    insert_custom_attributes(f"empty_{obj_name}", sun, debug=debug)
