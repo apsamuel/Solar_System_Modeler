@@ -1,30 +1,32 @@
-import os, sys
+import os, sys, importlib
+from copy import copy, deepcopy
 
 LIB_HOME='/Users/photon/DevOps/Projects/Solar_System_Model'
 os.chdir(LIB_HOME)
 sys.path.extend([os.path.join('.', 'lib')])
 import data as data
-import planet, moon, sun
+import planet as planet
+import moon as moon
+import sun as sun
+import solarsystem as solarsystem
 from planet import Planet
 from moon import Moon
 from sun import Sun
-from copy import copy
+from solarsystem import SolarSystem
 import orbital as orbital
-import blender as blender 
 import utilz as utilz
+import blender as blender 
 import dev as dev
-import importlib
-
-# create the solar system (planets & moons), this takes some time 
-Planet.make_system(debug=True)
-
-# scale down solar system objects
-Planet.scale_planets(debug=True)
-Moon.scale_moons(debug=True)
 
 # use properties of solar system to configure scene props, like a cool kid
 blender.scene_props(seperate_u=False)
 
+# create the solar system (planets & moons), this takes some time 
+ss = SolarSystem(name='mysystem', debug=True)
+ss.scale_solar_system(debug=True)
+
+
+blender.plot_sun(ss.sun, debug=True)
 
 blender.plot_planet(Planet.byname('Mercury'), debug=True)
 blender.add_orbital_drivers(Planet.byname('Mercury'))
