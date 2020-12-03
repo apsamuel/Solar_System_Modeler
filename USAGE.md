@@ -5,19 +5,25 @@
 ```python
 
 import os, sys
-import importlib
+from copy import copy, deepcopy
+
 LIB_HOME='/Users/photon/DevOps/Projects/Solar_System_Model'
 os.chdir(LIB_HOME)
 sys.path.extend([os.path.join('.', 'lib')])
 import data as data
-import planet, moon
+import planet as planet
+import moon as moon
+import sun as sun
+import solarsystem as solarsystem
 from planet import Planet
 from moon import Moon
-from copy import copy
+from sun import Sun
+from solarsystem import SolarSystem
 import orbital as orbital
-import blender as blender
+import blender as blender 
 import utilz as utilz
 import dev as dev
+import importlib
 ```
 
 ```python
