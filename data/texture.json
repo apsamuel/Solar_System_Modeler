@@ -1,0 +1,51 @@
+{
+    "Mercury": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_mercury.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Venus": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_venus_surface.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Earth": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_earth_daymap.jpg",
+        "normal": "/Users/photon/Downloads/8k_earth_daymap_bump.jpg",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Mars": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_mars.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Jupiter": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_jupiter.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Saturn": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_saturn.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto",
+        "ring": "https://www.solarsystemscope.com/textures/download/8k_saturn_ring_alpha.png"
+    },
+    "Uranus": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/2k_uranus.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Neptune": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/2k_neptune.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    }
+}
