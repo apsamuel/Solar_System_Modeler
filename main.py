@@ -1,4 +1,7 @@
+#!/usr/bin/env python
+
 import os, sys, importlib
+
 from copy import copy, deepcopy
 
 LIB_HOME='/Users/photon/DevOps/Projects/Solar_System_Model'
@@ -26,8 +29,13 @@ ss = SolarSystem(name='mysystem', debug=True)
 ss.scale_solar_system(debug=True)
 
 
+#space background..
+blender.plot_expanse('/Users/photon/Downloads/Spherical/SPACE013SX.hdr')
+
+#sun, aka origin.. 
 blender.plot_sun(ss.sun, debug=True)
 
+#some planets...
 blender.plot_planet(Planet.byname('Mercury'), debug=True)
 blender.add_orbital_drivers(Planet.byname('Mercury'))
 
@@ -46,3 +54,7 @@ blender.plot_planet(Planet.byname('Jupiter'), debug=True)
 blender.add_orbital_drivers(Planet.byname('Jupiter'))
 blender.plot_natural_satellites(Planet.byname('Jupiter'))
 
+
+#example of texturing a planet
+blender.add_surface_displacement(Planet.byname('Earth'), '/Users/photon/Downloads/8k_earth_daymap_bump.jpg')
+blender.add_albedo(Planet.byname('Earth'), '/Users/photon/Downloads/8k_earth_daymap.jpg')
