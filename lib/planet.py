@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os, sys, weakref, pickle, glob, ctypes
-sys.path.extend([os.path.join('.', 'lib')])
+sys.path.extend([os.path.join('../', 'lib')])
 import data
 import utilz
 from orbital import derive_semiminor_axis

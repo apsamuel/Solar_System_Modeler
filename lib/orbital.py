@@ -1,5 +1,5 @@
 import os, sys
-sys.path.extend([os.path.join('.', 'lib')])
+sys.path.extend([os.path.join('../', 'lib')])
 from math import sqrt
 from blender import frame, frames, normalized_frame
 

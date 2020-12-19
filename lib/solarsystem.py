@@ -2,7 +2,7 @@ import os, sys
 
 LIB_HOME='/Users/photon/DevOps/Projects/Solar_System_Model'
 os.chdir(LIB_HOME)
-sys.path.extend([os.path.join('.', 'lib')])
+sys.path.extend([os.path.join('../', 'lib')])
 from sun import Sun  
 from planet import Planet
 from moon import Moon
