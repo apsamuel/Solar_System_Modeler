@@ -1,10 +1,11 @@
 from __future__ import annotations  
 import os, sys, ctypes
-sys.path.extend([os.path.join('.', 'lib')])
+sys.path.extend([os.path.join('../', 'lib')])
 
 import bpy 
 import bpy_types
 import math
+from mathutils import Vector
 import utilz
 # test adding the Planet and Moon class back for proper typing
 #from planet import Planet
@@ -45,6 +46,41 @@ def normalized_frame(mini: float = 0.0, maxi: float = math.pi*2, multiplier=1.0)
     )
 
 # helper methods for calculating positions, angles, and other things between objects in a blender scene
+def distance(v1: mathutils.Vector, v0: mathutils.Vector):
+    return math.sqrt(
+        ((v1[0]-v0[0])**2) + ((v1[-1] - v0[-1])**2)
+    )
+
+def _create_triangular_height(v: mathutils.Vector):
+    return (
+        Vector(( 
+            v[0], 0
+        ))
+    )
+
+def get_bodies_angular_sweep(name):
+    obj = bpy.data.objects[name]
+    origin_vector = Vector((0,0))
+    position_vector = obj.location.xy
+    normal_vector = _create_triangular_height(position_vector)
+    o = distance(normal_vector, position_vector)
+    a = distance(origin_vector, normal_vector)
+    h = distance(origin_vector, position_vector)
+    angular_sweep = math.degrees(math.acos(
+        o/h
+    ))
+    # return tuple of o, a, h, angle (degrees)
+    print(f"o: {o} a: {a} h: {h}, angle: {angular_sweep}")
+
+
+
+
+# (origin, semi_major_axis) or (0,-semi_major_axis)
+# (o, h, a)
+# o _create_triangular_height(v: mathutils.Vector):
+# h distance(origin, object.xy) 
+# a distance(origin, (object.[semimajorAxis],0)
+
 def get_angle_a(a: float,b: float,c: float) -> float:
     """
     a: length of side a
@@ -132,6 +168,25 @@ def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KI
     bpy.data.scenes["Scene"].use_nodes = True  
     bpy.data.scenes["Scene"].eevee.use_bloom = True 
     bpy.data.scenes["Scene"].frame_end = 365*year_count
+    # remove default objs conditionally
+    objs = bpy.data.objects
+    if 'Camera' in objs:
+        objs.remove(objs['Camera'],do_unlink=True)
+    if 'Light' in objs:
+        objs.remove(objs['Light'], do_unlink=True)
+    if 'Cube' in objs:
+        objs.remove(objs['Cube'], do_unlink=True)
+
+    #remove any default materials...
+    for material in bpy.data.materials:
+        material.user_clear()
+        bpy.data.materials.remove(material)
+
+    # NOTE: add a simple light source.
+    bpy.ops.object.light_add(type='SUN', radius=10000, location=(0, 0, 0)) 
+    bpy.data.objects['Sun'].name = 'FalseSun'
+    bpy.data.objects['FalseSun'].data.name = 'FalseSun'
+    bpy.data.objects['FalseSun'].data.angle = math.radians(180)
 
     for workspace in list(bpy.data.workspaces):
         print(f"workspace: {workspace.name}")
@@ -139,11 +194,13 @@ def scene_props(sys_u: str ='METRIC', len_u: str ='KILOMETERS', mass_u: str ='KI
         for screen in screens:
             print(f"screen: {screen.name}")
             areas = list(screen.areas)
+            #screen.shading.type = 'RENDERED'
             for area in areas:
                 spaces = area.spaces
                 for space in spaces:
                     print(f"space type: {space.type}")
                     if space.type == "VIEW_3D":
+                        #space.viewport_shade = 'RENDERED'
                         space.overlay.grid_scale = scale_u 
                         space.overlay.show_axis_x = True 
                         space.overlay.show_axis_y = True
@@ -281,6 +338,12 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
         bpy.ops.mesh.primitive_plane_add(size=diameter, enter_editmode=False, location=(0, 0, 0))
         moonObject = bpy.context.active_object 
         moonObject.name = f"moon_{planet.englishName}_{moon.englishName}"
+        # add smooth shading and subsurface modifier 
+        bpy.ops.object.shade_smooth()
+        bpy.ops.object.modifier_add(type='SUBSURF')
+        moonObject.modifiers['Subdivision'].levels = 2 
+        moonObject.modifiers['Subdivision'].show_only_control_edges = True 
+        ##
         # NOTE: try setting the origin for objects...
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         rot_global_radians = float(format(math.radians(90), '.4f'))
@@ -350,8 +413,7 @@ def plot_natural_satellites(planet, sub_divisions: int = 100, prettify: bool = T
         override={'constraint':empty.constraints["Follow Path"]}
         bpy.ops.constraint.followpath_path_animate(override,constraint="Follow Path", owner='OBJECT')
         insert_custom_attributes(f"empty_{moon.englishName}", moon, debug=debug)
-
-
+        return moonObject
 
 # Planet 'Primitive'
 def plot_planet(planet, sub_divisions: int = 100, debug: bool = False):
@@ -371,6 +433,13 @@ def plot_planet(planet, sub_divisions: int = 100, debug: bool = False):
     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
     plane.name = obj_name
     plane.data.name = f"mesh_{obj_name}"
+    # add smooth shading & subsurface modifier
+    bpy.ops.object.shade_smooth()
+    bpy.ops.object.modifier_add(type='SUBSURF')
+    plane.modifiers['Subdivision'].levels = 2 
+    plane.modifiers['Subdivision'].show_only_control_edges = True 
+
+    ##
     bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
         orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
         constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
@@ -443,6 +512,7 @@ def plot_planet(planet, sub_divisions: int = 100, debug: bool = False):
     empty.name = f"empty_{obj_name}"
     plane.parent = empty
     insert_custom_attributes(f"empty_{obj_name}", planet, debug=debug)
+    return plane
 
 # Planet 'Sun'
 def plot_sun(sun, sub_divisions: int = 100, debug: bool = False):
@@ -462,6 +532,11 @@ def plot_sun(sun, sub_divisions: int = 100, debug: bool = False):
     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
     plane.name = obj_name
     plane.data.name = f"mesh_{obj_name}"
+    # add smooth shading and subdivision surface modifier for sun
+    bpy.ops.object.shade_smooth()
+    bpy.ops.object.modifier_add(type='SUBSURF')
+    plane.modifiers['Subdivision'].levels = 2 
+    plane.modifiers['Subdivision'].show_only_control_edges = True 
     bpy.ops.transform.rotate(value=rot_global_radians, orient_axis='X', orient_type='GLOBAL',
         orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
         constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False,
@@ -529,3 +604,119 @@ def plot_sun(sun, sub_divisions: int = 100, debug: bool = False):
     empty.name = f"empty_{obj_name}"
     plane.parent = empty
     insert_custom_attributes(f"empty_{obj_name}", sun, debug=debug)
+    return plane 
+
+#/Users/photon/Downloads/Spherical/SPACE013SX.hdr
+def plot_expanse(file_path):
+    bpy.ops.image.open(filepath=file_path, directory=os.path.dirname(file_path), files=[{"name":f"{os.path.basename(file_path)}"}], relative_path=True, show_multiview=False)
+    bpy.data.images[f"{os.path.basename(file_path)}"].colorspace_settings.name = 'sRGB'
+    bpy.data.images[f"{os.path.basename(file_path)}"].source = 'FILE'
+    bpy.data.images[f"{os.path.basename(file_path)}"].filepath = file_path
+    # use world node tree 
+    worldnodes = bpy.data.worlds['World'].node_tree.nodes 
+    worldlinks = bpy.data.worlds['World'].node_tree.links 
+    for node in worldnodes:
+        worldnodes.remove(node)
+    
+    environment_texture = worldnodes.new('ShaderNodeTexEnvironment')
+    environment_texture.image = bpy.data.images.load( bpy.data.images[f"{os.path.basename(file_path)}"].filepath )
+    environment_texture.interpolation = 'Linear'
+    environment_texture.projection = 'EQUIRECTANGULAR'
+    rgb_curves = worldnodes.new('ShaderNodeRGBCurve')
+    # set a point on the color values
+    # create 3 points on the color curve.
+    list( rgb_curves.mapping.curves[3].points )[0].location = Vector((0.565048, 0.063953))
+    list( rgb_curves.mapping.curves[3].points )[1].location = Vector((0.817991, 0.741279))
+
+    #rgb_curves.mapping.curves[3].points.new(position=(0,0))
+    #list( rgb_curves.mapping.curves[3].points )[2].location = Vector((0.9100417494773865, 0.9651163816452026))
+    node_out = environment_texture.outputs[-1]
+    node_in = rgb_curves.inputs[-1]
+    worldlinks.new(node_in, node_out)
+    # set world outputs
+    output = worldnodes.new('ShaderNodeOutputWorld')
+    node_in = output.inputs[0]
+    node_out = rgb_curves.outputs[0]
+    worldlinks.new(node_out, node_in)
+    # add environment texture node 
+    # add shader node RGB curve 
+    # add world output node 
+
+
+def add_surface_displacement(planet, file_path):
+    name = planet.englishName
+    # add image to blender
+    bpy.ops.image.open(filepath=file_path, directory=os.path.dirname(file_path), files=[{"name":f"{os.path.basename(file_path)}"}], relative_path=True, show_multiview=False)
+    bpy.data.images[f"{os.path.basename(file_path)}"].colorspace_settings.name = 'Non-Color'
+    bpy.data.images[f"{os.path.basename(file_path)}"].source = 'FILE'
+    bpy.data.images[f"{os.path.basename(file_path)}"].filepath = file_path
+    #create a texture using the image added
+    obj = select_object(name)
+    bpy.data.textures.new(f"{obj.name}_bump_data", 'IMAGE')
+    bpy.data.textures[f"{obj.name}_bump_data"].image = bpy.data.images[f"{os.path.basename(file_path)}"]
+    # add texture for displacement modifier 
+    bpy.ops.object.modifier_add(type='DISPLACE')
+    obj.modifiers["Displace"].strength = 100.00
+    obj.modifiers["Displace"].texture_coords = 'UV'
+    obj.modifiers["Displace"].texture = bpy.data.textures[f"{obj.name}_bump_data"]
+
+
+
+def add_albedo(planet, file_path):
+    name = planet.englishName
+    #setup image
+    bpy.ops.image.open(filepath=file_path, directory=os.path.dirname(file_path), files=[{"name":f"{os.path.basename(file_path)}"}], relative_path=True, show_multiview=False)
+    bpy.data.images[f"{os.path.basename(file_path)}"].colorspace_settings.name = 'sRGB'
+    bpy.data.images[f"{os.path.basename(file_path)}"].source = 'FILE'
+    bpy.data.images[f"{os.path.basename(file_path)}"].filepath = file_path
+    #create a texture using the image added
+    obj = select_object(name)
+    bpy.ops.material.new()
+    bpy.data.materials['Material'].name = f"{obj.name}_albedo"
+    material = bpy.data.materials[f"{obj.name}_albedo"] 
+    matnodes = bpy.data.materials[f"{obj.name}_albedo"].node_tree.nodes
+    nodelinks = bpy.data.materials[f"{obj.name}_albedo"].node_tree.links
+    # remove default nodes
+    for node in matnodes:
+        matnodes.remove(node)
+    # add standard albedo setup
+    texture_coord = matnodes.new('ShaderNodeTexCoord')
+    texture_coord.object = obj
+    mapping = matnodes.new('ShaderNodeMapping')
+    #rotate the mapping x=90 and z=180 in radians 
+    mapping.inputs[2].default_value[0] = round(math.radians(90),3)
+    mapping.inputs[2].default_value[2] = round(math.radians(180),3) 
+    # connect texture coord with mapping node 
+    node_out = texture_coord.outputs[3]
+    node_in = mapping.inputs[0]
+    nodelinks.new(node_out, node_in)
+    # add your base image texture for albedo 
+    image_texture = matnodes.new('ShaderNodeTexImage')
+    image_texture.image = bpy.data.images.load( bpy.data.images[f"{os.path.basename(file_path)}"].filepath )
+    image_texture.interpolation = 'Cubic'
+    image_texture.projection = 'SPHERE'
+    image_texture.extension = 'EXTEND'
+    node_out = mapping.outputs[-1]
+    node_in = image_texture.inputs[-1]
+    nodelinks.new(node_out, node_in)
+    # add bsdf principled shader 
+    bsdf_shader = matnodes.new('ShaderNodeBsdfPrincipled')
+    node_out = image_texture.outputs[0]
+    node_in = bsdf_shader.inputs[0]
+    nodelinks.new(node_out, node_in)
+    #add material output node 
+    output = matnodes.new('ShaderNodeOutputMaterial')
+    node_out = bsdf_shader.outputs[-1]
+    node_in = output.inputs[0]
+    nodelinks.new(node_out, node_in)
+
+    obj.data.materials.append(material)
+    return material
+
+
+
+
+
+
+
+
