@@ -67,3 +67,40 @@ for vert in face.vertices:
 https://blenderartists.org/t/selecting-a-face-through-the-api/497406/2
 https://blender.stackexchange.com/questions/2776/how-to-read-vertices-of-quad-faces-using-python-api
 ```
+
+determining angle omega
+
+we need 3 points in the XY plane to make a right triangle
+
+* (0,0) point of origin
+  * the origin, center mass of the Sun
+* (semimajor_axis, 0) & (-semimajor_axis, 0)
+  * idealized bounds of the planetary orbit, not accounting for semiminor
+* (object_x, object_y)
+  * the location of the object at any given time (frame)
+* CONDITIONS
+  * quadrants
+    * if object_x is positive, and object_y is positive, object is in QUADRANT 1
+      * a point in a straight line from the object to the x-axis is
+        * x=object_x,y=0
+
+
+Additional Improvements
+
+* The scene will need a light, the best idea so far is to just put a "sun" lamp at the scene origin (underneath the actual sun.. figure that one out later)
+* bpy.ops.object.light_add(type='SUN', radius=1, location=(0, 0, 0))
+* All objects should have the shade smooth property set, and subsurface modifiers added
+* bpy.ops.object.shade_smooth()
+* bpy.ops.object.modifier_add(type='SUBSURF')
+
+
+Texturing planets in blender
+
+---
+
+
+* bump maps are applied as displacement modifiers
+* bpy.ops.object.modifier_add(type='DISPLACE')
+* bpy.context.object.modifiers["Displace"].strength = 0.001
+
+texture coordinate -> vector mapping (rotations x 90 deg, z 180 deg) -> image texture (albedo) -> principled bsdf -> material output 
