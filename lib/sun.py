@@ -90,10 +90,10 @@ class Sun:
         self.massExponent = self.massExponent - (self.scaleMassExp)
         self.massRawKG = float( f"{int(self.massValue*(10**self.massExponent)):d}" )
         # NOTE: to address `OverflowError: Python int too large to convert to C int`, values which tend towards max will have their overage +100 subtracted `ctypes.c_uint(-1).value` 
-        if self.massRawKG >= ctypes.c_uint(-1).value:
-            amountOver = self.massRawKG - ctypes.c_uint(-1).value
-            print(f"{self.massRawKG} is larger than {ctypes.c_uint(-1).value}, subtracting {amountOver+100} from value") if debug else None
-            self.massRawKG = self.massRawKG - (amountOver + 100.00)
+        #if self.massRawKG >= ctypes.c_uint(-1).value:
+        #    amountOver = self.massRawKG - ctypes.c_uint(-1).value
+        #    print(f"{self.massRawKG} is larger than {ctypes.c_uint(-1).value}, subtracting {amountOver+100} from value") if debug else None
+        #    self.massRawKG = self.massRawKG - (amountOver + 100.00)
         self.meanRadius = self.meanRadius / (10**(self.scaleSizeExp)) 
         self.equaRadius = self.equaRadius / (10**(self.scaleSizeExp))
         print(f"INFO: {self.englishName} scaled values  [meanRadius {self.meanRadius}] [equaRadius {self.equaRadius}] [massExponent {self.massExponent}] [massRawKG {self.massRawKG}]") if debug else None
