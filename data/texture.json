@@ -13,7 +13,7 @@
     },
     "Earth": {
         "albedo": "https://www.solarsystemscope.com/textures/download/8k_earth_daymap.jpg",
-        "normal": "/Users/photon/Downloads/8k_earth_daymap_bump.jpg",
+        "normal": "auto",
         "height": "auto",
         "specular": "auto"
     },
@@ -44,6 +44,18 @@
     },
     "Neptune": {
         "albedo": "https://www.solarsystemscope.com/textures/download/2k_neptune.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Moon": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_moon.jpg",
+        "normal": "auto",
+        "height": "auto",
+        "specular": "auto"
+    },
+    "Sun": {
+        "albedo": "https://www.solarsystemscope.com/textures/download/8k_sun.jpg",
         "normal": "auto",
         "height": "auto",
         "specular": "auto"
